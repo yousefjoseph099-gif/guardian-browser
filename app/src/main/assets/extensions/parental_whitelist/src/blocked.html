@@ -1,0 +1,661 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self'; script-src 'self';">
+  <title>Website Blocked</title>
+  <style>
+    /* Theme Variables */
+    :root {
+      --bg-primary: #f8f9fa;
+      --bg-secondary: #ffffff;
+      --bg-tertiary: #f1f3f5;
+      --border-color: #e1e5e9;
+      --text-primary: #1a1a2e;
+      --text-secondary: #5c6370;
+      --text-muted: #8b919a;
+      --accent: #667eea;
+      --accent-light: rgba(102, 126, 234, 0.1);
+      --danger: #e53935;
+      --danger-light: rgba(229, 57, 53, 0.1);
+      --warning: #f59e0b;
+      --warning-light: rgba(245, 158, 11, 0.1);
+      --shadow-lg: 0 10px 40px rgba(0,0,0,0.12);
+    }
+
+    [data-theme="dark"] {
+      --bg-primary: #2b2a33;
+      --bg-secondary: #42414d;
+      --bg-tertiary: #38373f;
+      --border-color: #5b5b66;
+      --text-primary: #fbfbfe;
+      --text-secondary: #cfcfd8;
+      --text-muted: #8f8f9d;
+      --accent: #667eea;
+      --accent-light: rgba(102, 126, 234, 0.15);
+      --danger: #ef4444;
+      --danger-light: rgba(239, 68, 68, 0.15);
+      --warning: #f59e0b;
+      --warning-light: rgba(245, 158, 11, 0.15);
+      --shadow-lg: 0 10px 40px rgba(0,0,0,0.4);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      transition: background 0.3s, color 0.3s;
+    }
+
+    .container {
+      text-align: center;
+      max-width: 480px;
+      width: 100%;
+    }
+
+    .shield {
+      width: 120px;
+      height: 120px;
+      background: linear-gradient(135deg, #ef4444 0%, #dc2626 100%);
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      margin: 0 auto 30px;
+      box-shadow: 0 10px 40px rgba(239, 68, 68, 0.3);
+      animation: pulse 2s ease-in-out infinite;
+    }
+
+    @keyframes pulse {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.05); }
+    }
+
+    .shield svg {
+      width: 60px;
+      height: 60px;
+      color: white;
+    }
+
+    .shield.protected {
+      background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+      box-shadow: 0 10px 40px rgba(245, 158, 11, 0.3);
+    }
+
+    .shield.private {
+      background: linear-gradient(135deg, #8b5cf6 0%, #7c3aed 100%);
+      box-shadow: 0 10px 40px rgba(139, 92, 246, 0.3);
+    }
+
+    h1 {
+      font-size: 28px;
+      color: var(--text-primary);
+      margin-bottom: 10px;
+      font-weight: 600;
+    }
+
+    .subtitle {
+      font-size: 15px;
+      color: var(--text-muted);
+      margin-bottom: 25px;
+    }
+
+    .card {
+      background: var(--bg-secondary);
+      border-radius: 16px;
+      padding: 25px;
+      margin-bottom: 20px;
+      text-align: left;
+      border: 1px solid var(--border-color);
+      box-shadow: var(--shadow-lg);
+    }
+
+    .blocked-url {
+      background: var(--bg-tertiary);
+      border: 1px solid var(--border-color);
+      border-radius: 10px;
+      padding: 15px;
+      margin-bottom: 20px;
+    }
+
+    .blocked-url-label {
+      font-size: 11px;
+      color: var(--text-muted);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 8px;
+    }
+
+    .blocked-url-text {
+      font-size: 14px;
+      color: var(--text-primary);
+      font-family: 'Consolas', 'Monaco', monospace;
+      word-break: break-all;
+      line-height: 1.5;
+    }
+
+    .message {
+      display: flex;
+      gap: 15px;
+      align-items: flex-start;
+    }
+
+    .message-icon {
+      width: 44px;
+      height: 44px;
+      background: var(--warning-light);
+      border-radius: 10px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+    }
+
+    .message-icon svg {
+      width: 22px;
+      height: 22px;
+      color: var(--warning);
+    }
+
+    .message-icon.danger {
+      background: var(--danger-light);
+    }
+
+    .message-icon.danger svg {
+      color: var(--danger);
+    }
+
+    .message-content {
+      flex: 1;
+    }
+
+    .message-title {
+      font-size: 15px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 5px;
+    }
+
+    .message-text {
+      font-size: 13px;
+      color: var(--text-muted);
+      line-height: 1.6;
+    }
+
+    .actions {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+      flex-wrap: nowrap;
+    }
+
+    .btn {
+      padding: 12px 18px;
+      border: none;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      white-space: nowrap;
+    }
+
+    .btn-primary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 8px 25px rgba(102, 126, 234, 0.4);
+    }
+
+    .btn-secondary {
+      background: var(--bg-tertiary);
+      color: var(--text-primary);
+      border: 1px solid var(--border-color);
+    }
+
+    .btn-secondary:hover {
+      background: var(--border-color);
+    }
+
+    /* Quick Add Section */
+    .quick-add-section {
+      margin-top: 20px;
+      padding-top: 20px;
+      border-top: 1px solid var(--border-color);
+      display: none;
+    }
+
+    .quick-add-section.show {
+      display: block;
+    }
+
+    .quick-add-title {
+      font-size: 14px;
+      color: var(--text-primary);
+      margin-bottom: 15px;
+      font-weight: 500;
+    }
+
+    .quick-add-pin {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+
+    .quick-add-pin input {
+      width: 48px;
+      height: 52px;
+      font-size: 22px;
+      text-align: center;
+      border: 2px solid var(--border-color);
+      border-radius: 10px;
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+      transition: all 0.2s;
+    }
+
+    .quick-add-pin input:focus {
+      border-color: var(--accent);
+      outline: none;
+      box-shadow: 0 0 0 3px var(--accent-light);
+    }
+
+    .quick-add-error {
+      color: var(--danger);
+      font-size: 12px;
+      text-align: center;
+      margin-bottom: 10px;
+      display: none;
+    }
+
+    .quick-add-error.show {
+      display: block;
+    }
+
+    .quick-add-success {
+      color: #22c55e;
+      font-size: 14px;
+      text-align: center;
+      padding: 15px;
+      background: rgba(34, 197, 94, 0.1);
+      border-radius: 8px;
+      display: none;
+    }
+
+    .quick-add-success.show {
+      display: block;
+    }
+
+    /* Time limit message icon */
+    .message-icon.timelimit {
+      background: var(--warning-light);
+    }
+
+    .message-icon.timelimit svg {
+      color: var(--warning);
+    }
+
+    /* Shield variants */
+    .shield.timelimit {
+      background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+      box-shadow: 0 10px 40px rgba(245, 158, 11, 0.3);
+    }
+
+    /* Temp Access Section */
+    .temp-access-section {
+      margin-top: 20px;
+      padding-top: 20px;
+      border-top: 1px solid var(--border-color);
+      display: none;
+    }
+
+    .temp-access-section.show {
+      display: block;
+    }
+
+    .temp-access-title {
+      font-size: 14px;
+      color: var(--text-primary);
+      margin-bottom: 15px;
+      font-weight: 500;
+    }
+
+    .duration-selector {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      margin-bottom: 15px;
+      flex-wrap: wrap;
+    }
+
+    .duration-selector label {
+      display: inline-block;
+      cursor: pointer;
+    }
+
+    .duration-selector input[type="radio"] {
+      display: none;
+    }
+
+    .duration-selector .duration-option {
+      padding: 8px 16px;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      font-size: 13px;
+      color: var(--text-secondary);
+      background: var(--bg-secondary);
+      transition: all 0.2s;
+      display: inline-block;
+    }
+
+    .duration-selector input[type="radio"]:checked + .duration-option {
+      border-color: var(--accent);
+      background: var(--accent-light);
+      color: var(--accent);
+      font-weight: 500;
+    }
+
+    .duration-selector label:hover .duration-option {
+      border-color: var(--accent);
+    }
+
+    .temp-access-pin {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+
+    .temp-access-pin input {
+      width: 48px;
+      height: 52px;
+      font-size: 22px;
+      text-align: center;
+      border: 2px solid var(--border-color);
+      border-radius: 10px;
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+      transition: all 0.2s;
+    }
+
+    .temp-access-pin input:focus {
+      border-color: var(--accent);
+      outline: none;
+      box-shadow: 0 0 0 3px var(--accent-light);
+    }
+
+    .temp-access-error {
+      color: var(--danger);
+      font-size: 12px;
+      text-align: center;
+      margin-bottom: 10px;
+      display: none;
+    }
+
+    .temp-access-error.show {
+      display: block;
+    }
+
+    .temp-access-success {
+      color: #22c55e;
+      font-size: 14px;
+      text-align: center;
+      padding: 15px;
+      background: rgba(34, 197, 94, 0.1);
+      border-radius: 8px;
+      display: none;
+    }
+
+    .temp-access-success.show {
+      display: block;
+    }
+
+    /* Safe Links Section */
+    .safe-links-section {
+      margin-top: 25px;
+      padding-top: 25px;
+      border-top: 1px solid var(--border-color);
+    }
+
+    .safe-links-title {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-bottom: 12px;
+    }
+
+    .safe-links {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+    }
+
+    .safe-link {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 14px;
+      background: var(--bg-secondary);
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      color: var(--text-primary);
+      text-decoration: none;
+      font-size: 13px;
+      transition: all 0.15s;
+    }
+
+    .safe-link:hover {
+      background: var(--accent-light);
+      border-color: var(--accent);
+      color: var(--accent);
+    }
+
+    .safe-link svg {
+      width: 14px;
+      height: 14px;
+      color: var(--accent);
+    }
+
+    .footer {
+      margin-top: 30px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      color: var(--text-muted);
+      font-size: 12px;
+    }
+
+    .footer svg {
+      width: 14px;
+      height: 14px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <div id="shieldIcon" class="shield">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <circle cx="12" cy="12" r="10"/>
+        <line x1="15" y1="9" x2="9" y2="15"/>
+        <line x1="9" y1="9" x2="15" y2="15"/>
+      </svg>
+    </div>
+
+    <h1 id="title">Website Blocked</h1>
+    <p id="subtitle" class="subtitle">This website is not on the approved list</p>
+
+    <div class="card">
+      <div id="blockedUrlContainer" class="blocked-url" style="display: none;">
+        <div class="blocked-url-label">Blocked URL</div>
+        <div id="blockedUrl" class="blocked-url-text"></div>
+      </div>
+
+      <div id="normalMessage" class="message">
+        <div class="message-icon">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="11" width="18" height="11" rx="2"/>
+            <path d="M7 11V7a5 5 0 0110 0v4"/>
+          </svg>
+        </div>
+        <div class="message-content">
+          <div class="message-title">Parental Control Active</div>
+          <div class="message-text">This website hasn't been added to the whitelist. Ask a parent or guardian to add this site if you need access.</div>
+        </div>
+      </div>
+
+      <div id="protectedMessage" class="message" style="display: none;">
+        <div class="message-icon danger">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+            <line x1="12" y1="8" x2="12" y2="12"/>
+            <line x1="12" y1="16" x2="12.01" y2="16"/>
+          </svg>
+        </div>
+        <div class="message-content">
+          <div class="message-title">Protected System Page</div>
+          <div class="message-text">Access to Firefox settings and add-ons is blocked to prevent changes to parental control settings.</div>
+        </div>
+      </div>
+
+      <div id="privateMessage" class="message" style="display: none;">
+        <div class="message-icon danger">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24"/>
+            <line x1="1" y1="1" x2="23" y2="23"/>
+          </svg>
+        </div>
+        <div class="message-content">
+          <div class="message-title">Private Browsing Disabled</div>
+          <div class="message-text">Private browsing mode is blocked by parental controls. All browsing must go through the protected browser.</div>
+        </div>
+      </div>
+
+      <div id="timelimitMessage" class="message" style="display: none;">
+        <div class="message-icon timelimit">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M6 2L6 6"/>
+            <path d="M18 2L18 6"/>
+            <path d="M6 18L6 22"/>
+            <path d="M18 18L18 22"/>
+            <path d="M6 6C6 6 6 10 12 12C6 14 6 18 6 18"/>
+            <path d="M18 6C18 6 18 10 12 12C18 14 18 18 18 18"/>
+            <line x1="6" y1="6" x2="18" y2="6"/>
+            <line x1="6" y1="18" x2="18" y2="18"/>
+          </svg>
+        </div>
+        <div class="message-content">
+          <div class="message-title">Daily Time Used Up</div>
+          <div class="message-text">Your daily browsing time has been used. Come back tomorrow!</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="actions">
+      <button id="goBackBtn" class="btn btn-primary">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+          <line x1="19" y1="12" x2="5" y2="12"/>
+          <polyline points="12,19 5,12 12,5"/>
+        </svg>
+        Go Back
+      </button>
+      <button id="addSiteBtn" class="btn btn-secondary" style="display: none;">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/>
+          <line x1="12" y1="8" x2="12" y2="16"/>
+          <line x1="8" y1="12" x2="16" y2="12"/>
+        </svg>
+        Parent? Add This Site
+      </button>
+      <button id="tempAccessBtn" class="btn btn-secondary" style="display: none;">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2">
+          <circle cx="12" cy="12" r="10"/>
+          <polyline points="12,6 12,12 16,14"/>
+        </svg>
+        Allow Temporarily
+      </button>
+    </div>
+
+    <!-- Quick Add PIN Entry -->
+    <div id="quickAddSection" class="quick-add-section">
+      <div class="quick-add-title">Enter your PIN to add this site:</div>
+      <div class="quick-add-pin">
+        <input type="password" maxlength="1" class="quick-pin" data-index="0" inputmode="numeric">
+        <input type="password" maxlength="1" class="quick-pin" data-index="1" inputmode="numeric">
+        <input type="password" maxlength="1" class="quick-pin" data-index="2" inputmode="numeric">
+        <input type="password" maxlength="1" class="quick-pin" data-index="3" inputmode="numeric">
+      </div>
+      <div id="quickAddError" class="quick-add-error">Incorrect PIN</div>
+      <div id="quickAddSuccess" class="quick-add-success">
+        Site added! Redirecting...
+      </div>
+    </div>
+
+    <!-- Temporary Access PIN Entry -->
+    <div id="tempAccessSection" class="temp-access-section">
+      <div class="temp-access-title">Select duration and enter PIN:</div>
+      <div class="duration-selector">
+        <label>
+          <input type="radio" name="tempDuration" value="15">
+          <span class="duration-option">15 min</span>
+        </label>
+        <label>
+          <input type="radio" name="tempDuration" value="30" checked>
+          <span class="duration-option">30 min</span>
+        </label>
+        <label>
+          <input type="radio" name="tempDuration" value="60">
+          <span class="duration-option">1 hr</span>
+        </label>
+        <label>
+          <input type="radio" name="tempDuration" value="120">
+          <span class="duration-option">2 hrs</span>
+        </label>
+      </div>
+      <div class="temp-access-pin">
+        <input type="password" maxlength="1" class="quick-pin-temp" data-index="0" inputmode="numeric">
+        <input type="password" maxlength="1" class="quick-pin-temp" data-index="1" inputmode="numeric">
+        <input type="password" maxlength="1" class="quick-pin-temp" data-index="2" inputmode="numeric">
+        <input type="password" maxlength="1" class="quick-pin-temp" data-index="3" inputmode="numeric">
+      </div>
+      <div id="tempAccessError" class="temp-access-error">Incorrect PIN</div>
+      <div id="tempAccessSuccess" class="temp-access-success">
+        Temporary access granted! Redirecting...
+      </div>
+    </div>
+
+    <!-- Quick Links to Safe Sites -->
+    <div id="safeLinksSection" class="safe-links-section" style="display: none;">
+      <p class="safe-links-title">Visit an allowed site instead:</p>
+      <div id="safeLinks" class="safe-links"></div>
+    </div>
+
+    <div class="footer">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+      </svg>
+      Protected by Parental Whitelist Control
+    </div>
+  </div>
+
+  <script src="blocked.js"></script>
+</body>
+</html>

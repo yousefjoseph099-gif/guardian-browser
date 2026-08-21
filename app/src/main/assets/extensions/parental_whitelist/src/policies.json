@@ -1,0 +1,20 @@
+{
+  "policies": {
+    "BlockAboutAddons": true,
+    "BlockAboutConfig": true,
+    "BlockAboutProfiles": true,
+    "BlockAboutSupport": true,
+    "DisableDeveloperTools": true,
+    "DisablePrivateBrowsing": true,
+    "DisableSafeMode": true,
+    "DisableProfileRefresh": true,
+    "DisableProfileImport": true,
+    "InstallAddonsPermission": {
+      "Default": false
+    },
+    "Preferences": {
+      "devtools.policy.disabled": true,
+      "browser.privatebrowsing.autostart": false
+    }
+  }
+}

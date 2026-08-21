@@ -1,0 +1,689 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="Content-Security-Policy" content="default-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self'; img-src 'self'; script-src 'self';">
+  <title>Parental Whitelist Control</title>
+  <style>
+    /* Theme Variables */
+    :root {
+      --bg-primary: #f8f9fa;
+      --bg-secondary: #ffffff;
+      --bg-tertiary: #f1f3f5;
+      --border-color: #e1e5e9;
+      --text-primary: #1a1a2e;
+      --text-secondary: #5c6370;
+      --text-muted: #8b919a;
+      --accent: #667eea;
+      --accent-hover: #5a6fd6;
+      --accent-light: rgba(102, 126, 234, 0.1);
+      --success: #4caf50;
+      --success-hover: #43a047;
+      --danger: #e53935;
+      --danger-hover: #c62828;
+      --danger-light: rgba(229, 57, 53, 0.1);
+      --warning: #f59e0b;
+      --warning-light: rgba(245, 158, 11, 0.15);
+      --warning-border: #ffb74d;
+      --warning-text: #e65100;
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.1);
+      --toggle-off: #ccc;
+    }
+
+    [data-theme="dark"] {
+      --bg-primary: #2b2a33;
+      --bg-secondary: #42414d;
+      --bg-tertiary: #38373f;
+      --border-color: #5b5b66;
+      --text-primary: #fbfbfe;
+      --text-secondary: #cfcfd8;
+      --text-muted: #8f8f9d;
+      --accent: #667eea;
+      --accent-hover: #7b8ef0;
+      --accent-light: rgba(102, 126, 234, 0.15);
+      --success: #4caf50;
+      --success-hover: #66bb6a;
+      --danger: #ef4444;
+      --danger-hover: #f87171;
+      --danger-light: rgba(239, 68, 68, 0.15);
+      --warning: #f59e0b;
+      --warning-light: rgba(245, 158, 11, 0.15);
+      --warning-border: #d97706;
+      --warning-text: #fbbf24;
+      --shadow-sm: 0 1px 3px rgba(0,0,0,0.3);
+      --toggle-off: #5b5b66;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      width: 350px;
+      min-height: 200px;
+      background: var(--bg-primary);
+      color: var(--text-primary);
+      transition: background 0.3s, color 0.3s;
+    }
+
+    .header {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      padding: 15px;
+      text-align: center;
+    }
+
+    .header h1 {
+      font-size: 16px;
+      font-weight: 600;
+    }
+
+    .header .subtitle {
+      font-size: 11px;
+      opacity: 0.9;
+      margin-top: 4px;
+    }
+
+    .header .stats-badge {
+      display: inline-block;
+      background: rgba(255,255,255,0.2);
+      padding: 4px 10px;
+      border-radius: 12px;
+      font-size: 11px;
+      margin-top: 8px;
+    }
+
+    /* Activity Log */
+    .activity-section {
+      margin-top: 15px;
+      border-top: 1px solid var(--border-color);
+      padding-top: 15px;
+    }
+
+    .activity-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      cursor: pointer;
+      padding: 8px 0;
+    }
+
+    .activity-header h3 {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-primary);
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .activity-header .toggle-arrow {
+      font-size: 10px;
+      color: var(--text-muted);
+      transition: transform 0.2s;
+    }
+
+    .activity-header.expanded .toggle-arrow {
+      transform: rotate(180deg);
+    }
+
+    .activity-list {
+      display: none;
+      max-height: 150px;
+      overflow-y: auto;
+      margin-top: 8px;
+    }
+
+    .activity-list.show {
+      display: block;
+    }
+
+    .activity-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 8px 10px;
+      background: var(--bg-tertiary);
+      border-radius: 6px;
+      margin-bottom: 6px;
+      font-size: 11px;
+    }
+
+    .activity-item:last-child {
+      margin-bottom: 0;
+    }
+
+    .activity-url {
+      color: var(--text-primary);
+      font-family: monospace;
+      max-width: 180px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .activity-time {
+      color: var(--text-muted);
+      font-size: 10px;
+    }
+
+    .activity-empty {
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 11px;
+      padding: 15px;
+    }
+
+    /* Toast Notification */
+    .toast {
+      position: fixed;
+      bottom: 15px;
+      left: 50%;
+      transform: translateX(-50%) translateY(100px);
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+      padding: 10px 20px;
+      border-radius: 8px;
+      font-size: 12px;
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--border-color);
+      opacity: 0;
+      transition: all 0.3s;
+      z-index: 1000;
+    }
+
+    .toast.show {
+      transform: translateX(-50%) translateY(0);
+      opacity: 1;
+    }
+
+    .toast.success {
+      border-left: 3px solid var(--success);
+    }
+
+    .toast.error {
+      border-left: 3px solid var(--danger);
+    }
+
+    /* Confirmation Dialog */
+    .confirm-overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.5);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+    }
+
+    .confirm-overlay.show {
+      display: flex;
+    }
+
+    .confirm-dialog {
+      background: var(--bg-secondary);
+      border-radius: 12px;
+      padding: 20px;
+      max-width: 300px;
+      text-align: center;
+      box-shadow: var(--shadow-sm);
+    }
+
+    .confirm-dialog h4 {
+      color: var(--text-primary);
+      font-size: 14px;
+      margin-bottom: 10px;
+    }
+
+    .confirm-dialog p {
+      color: var(--text-secondary);
+      font-size: 12px;
+      margin-bottom: 15px;
+    }
+
+    .confirm-buttons {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+    }
+
+    .confirm-buttons .btn {
+      flex: 1;
+    }
+
+    .container {
+      padding: 15px;
+    }
+
+    /* PIN Entry Screen */
+    .pin-screen {
+      text-align: center;
+      padding: 20px;
+    }
+
+    .pin-title {
+      font-size: 14px;
+      color: var(--text-primary);
+      margin-bottom: 15px;
+    }
+
+    .pin-input {
+      display: flex;
+      justify-content: center;
+      gap: 8px;
+      margin-bottom: 15px;
+    }
+
+    .pin-digit {
+      width: 45px;
+      height: 50px;
+      font-size: 24px;
+      text-align: center;
+      border: 2px solid var(--border-color);
+      border-radius: 8px;
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+      transition: border-color 0.2s, background 0.3s;
+    }
+
+    .pin-digit:focus {
+      border-color: var(--accent);
+      outline: none;
+    }
+
+    .pin-error {
+      color: var(--danger);
+      font-size: 12px;
+      margin-bottom: 10px;
+      display: none;
+    }
+
+    .pin-error.show {
+      display: block;
+    }
+
+    .lockout-message {
+      background: var(--danger-light);
+      color: var(--danger);
+      padding: 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      margin-bottom: 10px;
+    }
+
+    /* Main Panel */
+    .main-panel {
+      display: none;
+    }
+
+    .status-bar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      background: var(--bg-secondary);
+      padding: 12px;
+      border-radius: 8px;
+      margin-bottom: 15px;
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--border-color);
+    }
+
+    .status-label {
+      font-size: 13px;
+      color: var(--text-primary);
+    }
+
+    .toggle-switch {
+      position: relative;
+      width: 50px;
+      height: 26px;
+    }
+
+    .toggle-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .toggle-slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: var(--toggle-off);
+      transition: 0.3s;
+      border-radius: 26px;
+    }
+
+    .toggle-slider:before {
+      position: absolute;
+      content: "";
+      height: 20px;
+      width: 20px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: 0.3s;
+      border-radius: 50%;
+    }
+
+    input:checked + .toggle-slider {
+      background-color: var(--success);
+    }
+
+    input:checked + .toggle-slider:before {
+      transform: translateX(24px);
+    }
+
+    .section-title {
+      font-size: 13px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 10px;
+    }
+
+    .add-site {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 15px;
+    }
+
+    .add-site input {
+      flex: 1;
+      padding: 10px 12px;
+      border: 1px solid var(--border-color);
+      border-radius: 6px;
+      font-size: 13px;
+      background: var(--bg-secondary);
+      color: var(--text-primary);
+      transition: border-color 0.2s, background 0.3s;
+    }
+
+    .add-site input:focus {
+      border-color: var(--accent);
+      outline: none;
+    }
+
+    .add-site input::placeholder {
+      color: var(--text-muted);
+    }
+
+    .btn {
+      padding: 10px 16px;
+      border: none;
+      border-radius: 6px;
+      font-size: 13px;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+
+    .btn-primary {
+      background: var(--accent);
+      color: white;
+    }
+
+    .btn-primary:hover {
+      background: var(--accent-hover);
+    }
+
+    .btn-danger {
+      background: var(--danger);
+      color: white;
+    }
+
+    .btn-danger:hover {
+      background: var(--danger-hover);
+    }
+
+    .btn-danger-sm {
+      background: var(--danger);
+      color: white;
+      padding: 6px 10px;
+      font-size: 11px;
+    }
+
+    .btn-danger-sm:hover {
+      background: var(--danger-hover);
+    }
+
+    .whitelist {
+      background: var(--bg-secondary);
+      border-radius: 8px;
+      max-height: 200px;
+      overflow-y: auto;
+      box-shadow: var(--shadow-sm);
+      border: 1px solid var(--border-color);
+    }
+
+    .whitelist-item {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 12px;
+      border-bottom: 1px solid var(--border-color);
+    }
+
+    .whitelist-item:last-child {
+      border-bottom: none;
+    }
+
+    .whitelist-url {
+      font-size: 12px;
+      color: var(--text-primary);
+      word-break: break-all;
+    }
+
+    .empty-list {
+      padding: 20px;
+      text-align: center;
+      color: var(--text-muted);
+      font-size: 12px;
+    }
+
+    .footer-actions {
+      margin-top: 15px;
+      padding-top: 15px;
+      border-top: 1px solid var(--border-color);
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .btn-secondary {
+      background: var(--bg-tertiary);
+      color: var(--text-primary);
+      border: 1px solid var(--border-color);
+    }
+
+    .btn-secondary:hover {
+      background: var(--border-color);
+    }
+
+    .btn-success {
+      background: var(--success);
+      color: white;
+    }
+
+    .btn-success:hover {
+      background: var(--success-hover);
+    }
+
+    .reminder-notice {
+      background: var(--warning-light);
+      border: 1px solid var(--warning-border);
+      border-radius: 6px;
+      padding: 8px 12px;
+      margin-bottom: 15px;
+      font-size: 11px;
+      color: var(--warning-text);
+      text-align: center;
+    }
+
+    /* Setup Screen */
+    .setup-screen {
+      display: none;
+      text-align: center;
+      padding: 20px;
+    }
+
+    .setup-screen.show {
+      display: block;
+    }
+
+    .setup-title {
+      font-size: 16px;
+      font-weight: 600;
+      color: var(--text-primary);
+      margin-bottom: 10px;
+    }
+
+    .setup-subtitle {
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-bottom: 20px;
+    }
+
+    .confirm-pin {
+      margin-top: 15px;
+    }
+
+    .confirm-label {
+      font-size: 12px;
+      color: var(--text-secondary);
+      margin-bottom: 10px;
+    }
+
+    /* Time Remaining Badge */
+    .time-remaining-badge {
+      margin-left: 6px;
+    }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>Parental Whitelist Control</h1>
+    <div class="subtitle">Keep browsing safe</div>
+    <div id="statsDisplay" class="stats-badge" style="display: none;">
+      Blocked <span id="todayBlocked">0</span> attempts today
+    </div>
+    <div id="timeRemainingDisplay" class="stats-badge time-remaining-badge" style="display: none;">
+      <span id="timeRemaining">--</span> remaining today
+    </div>
+  </div>
+  
+  <!-- Initial Setup Screen -->
+  <div id="setupScreen" class="setup-screen">
+    <div class="setup-title">Welcome! Let's set up your PIN</div>
+    <div class="setup-subtitle">Create a 4-digit PIN to protect settings</div>
+    
+    <div class="pin-input">
+      <input type="password" maxlength="1" class="pin-digit setup-digit" data-index="0">
+      <input type="password" maxlength="1" class="pin-digit setup-digit" data-index="1">
+      <input type="password" maxlength="1" class="pin-digit setup-digit" data-index="2">
+      <input type="password" maxlength="1" class="pin-digit setup-digit" data-index="3">
+    </div>
+    
+    <div class="confirm-pin">
+      <div class="confirm-label">Confirm PIN:</div>
+      <div class="pin-input">
+        <input type="password" maxlength="1" class="pin-digit confirm-digit" data-index="0">
+        <input type="password" maxlength="1" class="pin-digit confirm-digit" data-index="1">
+        <input type="password" maxlength="1" class="pin-digit confirm-digit" data-index="2">
+        <input type="password" maxlength="1" class="pin-digit confirm-digit" data-index="3">
+      </div>
+    </div>
+    
+    <div id="setupError" class="pin-error">PINs do not match</div>
+    <button id="setupBtn" class="btn btn-primary" style="margin-top: 15px; width: 100%;">Set PIN & Activate</button>
+  </div>
+  
+  <!-- PIN Entry Screen -->
+  <div id="pinScreen" class="pin-screen">
+    <div class="pin-title">Enter your 4-digit PIN</div>
+    <div id="lockoutMessage" class="lockout-message" style="display: none;"></div>
+    <div class="pin-input">
+      <input type="password" maxlength="1" class="pin-digit entry-digit" data-index="0">
+      <input type="password" maxlength="1" class="pin-digit entry-digit" data-index="1">
+      <input type="password" maxlength="1" class="pin-digit entry-digit" data-index="2">
+      <input type="password" maxlength="1" class="pin-digit entry-digit" data-index="3">
+    </div>
+    <div id="pinError" class="pin-error">Incorrect PIN</div>
+  </div>
+  
+  <!-- Main Control Panel -->
+  <div id="mainPanel" class="main-panel">
+    <div class="container">
+      <div class="reminder-notice">
+        Remember to click <strong>Lock</strong> after making changes!
+      </div>
+      <div class="status-bar">
+        <span class="status-label">Protection Active</span>
+        <label class="toggle-switch">
+          <input type="checkbox" id="enableToggle" checked>
+          <span class="toggle-slider"></span>
+        </label>
+      </div>
+      
+      <div class="section-title">Add Allowed Website</div>
+      <div class="add-site">
+        <input type="text" id="newSite" placeholder="e.g., example.com or example.com/safe">
+        <button id="addSiteBtn" class="btn btn-primary">Add</button>
+      </div>
+      
+      <div class="activity-section" style="margin-top: 0; border-top: none; padding-top: 0;">
+        <div id="whitelistHeader" class="activity-header">
+          <h3>
+            <span>Allowed Websites</span>
+            <span id="siteCount" style="font-weight: 400; color: var(--text-muted); font-size: 11px;">(0)</span>
+          </h3>
+          <span class="toggle-arrow">▼</span>
+        </div>
+        <div id="whitelist" class="whitelist" style="display: none;">
+          <div class="empty-list">No websites added yet</div>
+        </div>
+      </div>
+      
+      <!-- Activity Log Section -->
+      <div class="activity-section">
+        <div id="activityHeader" class="activity-header">
+          <h3>
+            <span>Recently Blocked</span>
+            <span id="activityCount"></span>
+          </h3>
+          <span class="toggle-arrow">▼</span>
+        </div>
+        <div id="activityList" class="activity-list">
+          <div class="activity-empty">No blocked attempts yet</div>
+        </div>
+      </div>
+
+      <div class="footer-actions">
+        <button id="changePinBtn" class="btn btn-danger">Change PIN</button>
+        <button id="settingsBtn" class="btn btn-secondary">Settings</button>
+        <button id="lockBtn" class="btn btn-success">Lock</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Toast Notification -->
+  <div id="toast" class="toast"></div>
+
+  <!-- Confirmation Dialog -->
+  <div id="confirmOverlay" class="confirm-overlay">
+    <div class="confirm-dialog">
+      <h4 id="confirmTitle">Confirm Action</h4>
+      <p id="confirmMessage">Are you sure?</p>
+      <div class="confirm-buttons">
+        <button id="confirmCancel" class="btn btn-secondary">Cancel</button>
+        <button id="confirmOk" class="btn btn-danger">Confirm</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

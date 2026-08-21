@@ -1,0 +1,65 @@
+{
+  "manifest_version": 2,
+  "name": "Parental Whitelist Control",
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "parental-whitelist@control.local",
+      "strict_min_version": "142.0",
+      "data_collection_permissions": {
+        "required": [
+          "none"
+        ]
+      }
+    }
+  },
+  "version": "1.6.0",
+  "description": "A parental control extension that only allows access to allowed websites. PIN protected with auto-lock, activity tracking, and easy setup.",
+  "permissions": [
+    "webRequest",
+    "webRequestBlocking",
+    "webNavigation",
+    "storage",
+    "tabs",
+    "menus",
+    "notifications",
+    "<all_urls>"
+  ],
+  "commands": {
+    "_execute_browser_action": {
+      "suggested_key": {
+        "default": "Ctrl+Shift+A"
+      }
+    }
+  },
+  "incognito": "spanning",
+  "background": {
+    "scripts": [
+      "src/background.js"
+    ],
+    "persistent": true
+  },
+  "browser_action": {
+    "default_popup": "src/popup.html",
+    "default_icon": {
+      "16": "src/icons/icon16.png",
+      "48": "src/icons/icon48.png",
+      "128": "src/icons/icon128.png"
+    },
+    "default_title": "Parental Whitelist Control",
+    "default_area": "navbar"
+  },
+  "icons": {
+    "16": "src/icons/icon16.png",
+    "48": "src/icons/icon48.png",
+    "128": "src/icons/icon128.png"
+  },
+  "options_ui": {
+    "page": "src/options.html",
+    "browser_style": false,
+    "open_in_tab": true
+  },
+  "web_accessible_resources": [
+    "src/blocked.html",
+    "src/blocked.js"
+  ]
+}
