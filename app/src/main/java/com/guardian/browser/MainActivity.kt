@@ -3,6 +3,8 @@ package com.guardian.browser
 import android.Manifest
 import android.content.Context
 import android.content.SharedPreferences
+import android.graphics.Color
+import android.graphics.drawable.ColorDrawable
 import android.os.Build
 import android.os.Bundle
 import android.util.Log
@@ -18,31 +20,35 @@ import android.widget.TextView
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
+import org.mozilla.geckoview.GeckoResult
 import org.mozilla.geckoview.GeckoRuntime
 import org.mozilla.geckoview.GeckoSession
 import org.mozilla.geckoview.GeckoView
 import org.mozilla.geckoview.WebExtension
-import org.mozilla.geckoview.WebExtensionController
 
 class MainActivity : AppCompatActivity() {
 
     private lateinit var geckoView: GeckoView
     private lateinit var addressBar: EditText
+    private lateinit var tabStrip: LinearLayout
+    private lateinit var actionButton: Button
     private lateinit var session: GeckoSession
     private lateinit var runtime: GeckoRuntime
     private lateinit var prefs: SharedPreferences
 
-    // Kept once the extension finishes installing, so the settings dialog
-    // can enable/disable it and jump to its own options page.
     private var installedExtension: WebExtension? = null
+    private var browserAction: WebExtension.Action? = null
+
+    private data class BrowserTab(val session: GeckoSession, var title: String = "New Tab")
+    private val tabs = mutableListOf<BrowserTab>()
+    private var currentTabIndex = -1
 
     private val parentalExtensionPath =
         "resource://android/assets/extensions/parental_whitelist/"
 
     private val defaultStartUrl = "https://start.mozilla.org"
 
-    // Label shown to the user -> query template ("%s" gets replaced with the
-    // URL-encoded search text).
     private val searchEngines = linkedMapOf(
         "DuckDuckGo" to "https://duckduckgo.com/html/?q=%s",
         "Google" to "https://www.google.com/search?q=%s",
@@ -66,18 +72,25 @@ class MainActivity : AppCompatActivity() {
 
         geckoView = findViewById(R.id.geckoview)
         addressBar = findViewById(R.id.address_bar)
+        tabStrip = findViewById(R.id.tab_strip)
+        actionButton = findViewById(R.id.action_button)
         val goButton: ImageButton = findViewById(R.id.go_button)
         val settingsButton: Button = findViewById(R.id.settings_button)
+        val backButton: Button = findViewById(R.id.back_button)
+        val forwardButton: Button = findViewById(R.id.forward_button)
+        val homeButton: Button = findViewById(R.id.home_button)
 
         runtime = GeckoRuntime.create(this)
-        session = GeckoSession()
-        session.open(runtime)
-        geckoView.setSession(session)
 
         installParentalControlExtension()
 
         goButton.setOnClickListener { loadFromAddressBar() }
         settingsButton.setOnClickListener { showSettingsDialog() }
+        backButton.setOnClickListener { session.goBack() }
+        forwardButton.setOnClickListener { session.goForward() }
+        homeButton.setOnClickListener { session.loadUri(defaultStartUrl) }
+        actionButton.setOnClickListener { browserAction?.click() }
+
         addressBar.setOnEditorActionListener { _, actionId, _ ->
             if (actionId == EditorInfo.IME_ACTION_GO || actionId == EditorInfo.IME_ACTION_DONE) {
                 loadFromAddressBar()
@@ -87,8 +100,81 @@ class MainActivity : AppCompatActivity() {
             }
         }
 
-        session.loadUri(defaultStartUrl)
+        openNewTab(defaultStartUrl)
     }
+
+    private fun dp(value: Int): Int = (value * resources.displayMetrics.density).toInt()
+
+    // ---------------------------------------------------------------
+    // Tabs
+    // ---------------------------------------------------------------
+
+    private fun openNewTab(url: String = defaultStartUrl) {
+        val newSession = GeckoSession()
+        newSession.open(runtime)
+        newSession.contentDelegate = object : GeckoSession.ContentDelegate {
+            override fun onTitleChange(session: GeckoSession, title: String?) {
+                tabs.find { it.session == session }?.let {
+                    it.title = if (title.isNullOrBlank()) "New Tab" else title
+                    runOnUiThread { refreshTabStrip() }
+                }
+            }
+        }
+        tabs.add(BrowserTab(newSession))
+        switchToTab(tabs.size - 1)
+        newSession.loadUri(url)
+    }
+
+    private fun switchToTab(index: Int) {
+        if (index !in tabs.indices) return
+        currentTabIndex = index
+        session = tabs[index].session
+        geckoView.setSession(session)
+        refreshTabStrip()
+    }
+
+    private fun closeTab(index: Int) {
+        if (index !in tabs.indices) return
+        val closed = tabs.removeAt(index)
+        closed.session.close()
+        if (tabs.isEmpty()) {
+            openNewTab()
+            return
+        }
+        switchToTab(if (index >= tabs.size) tabs.size - 1 else index)
+    }
+
+    private fun refreshTabStrip() {
+        tabStrip.removeAllViews()
+        tabs.forEachIndexed { index, tab ->
+            val tabButton = Button(this).apply {
+                text = if (tab.title.length > 12) tab.title.take(12) + "…" else tab.title
+                minWidth = 0
+                minHeight = 0
+                setPadding(dp(12), dp(6), dp(12), dp(6))
+                setTextColor(Color.WHITE)
+                val color = if (index == currentTabIndex) R.color.accent else R.color.toolbar_background
+                background = ColorDrawable(ContextCompat.getColor(this@MainActivity, color))
+                setOnClickListener { switchToTab(index) }
+                setOnLongClickListener { closeTab(index); true }
+            }
+            tabStrip.addView(tabButton)
+        }
+        val newTabButton = Button(this).apply {
+            text = "+"
+            minWidth = 0
+            minHeight = 0
+            setPadding(dp(16), dp(6), dp(16), dp(6))
+            setTextColor(Color.WHITE)
+            background = ColorDrawable(ContextCompat.getColor(this@MainActivity, R.color.toolbar_background_dark))
+            setOnClickListener { openNewTab() }
+        }
+        tabStrip.addView(newTabButton)
+    }
+
+    // ---------------------------------------------------------------
+    // Extension: install + its own toolbar icon/popup ("browser action")
+    // ---------------------------------------------------------------
 
     private fun installParentalControlExtension() {
         runtime.webExtensionController
@@ -96,6 +182,29 @@ class MainActivity : AppCompatActivity() {
             .accept(
                 { extension: WebExtension? ->
                     installedExtension = extension
+                    extension?.setActionDelegate(object : WebExtension.ActionDelegate {
+                        override fun onBrowserAction(
+                            extension: WebExtension,
+                            session: GeckoSession?,
+                            action: WebExtension.Action
+                        ) {
+                            browserAction = action
+                            val isEnabled = action.enabled ?: true
+                            runOnUiThread {
+                                actionButton.visibility = if (isEnabled) View.VISIBLE else View.GONE
+                            }
+                        }
+
+                        override fun onOpenPopup(
+                            extension: WebExtension,
+                            action: WebExtension.Action
+                        ): GeckoResult<GeckoSession> = showActionPopup()
+
+                        override fun onTogglePopup(
+                            extension: WebExtension,
+                            action: WebExtension.Action
+                        ): GeckoResult<GeckoSession> = showActionPopup()
+                    })
                     Log.i("GuardianBrowser", "Parental control extension installed: ${extension?.id}")
                 },
                 { error: Throwable? ->
@@ -103,6 +212,31 @@ class MainActivity : AppCompatActivity() {
                 }
             )
     }
+
+    private fun showActionPopup(): GeckoResult<GeckoSession> {
+        val popupSession = GeckoSession()
+        popupSession.open(runtime)
+
+        runOnUiThread {
+            val popupView = GeckoView(this)
+            popupView.setSession(popupSession)
+            val dialog = AlertDialog.Builder(this)
+                .setView(popupView)
+                .setOnDismissListener { popupSession.close() }
+                .create()
+            dialog.show()
+            dialog.window?.setLayout(
+                (resources.displayMetrics.widthPixels * 0.9).toInt(),
+                (resources.displayMetrics.heightPixels * 0.6).toInt()
+            )
+        }
+
+        return GeckoResult.fromValue(popupSession)
+    }
+
+    // ---------------------------------------------------------------
+    // Address bar
+    // ---------------------------------------------------------------
 
     private fun loadFromAddressBar() {
         var input = addressBar.text.toString().trim()
@@ -121,16 +255,17 @@ class MainActivity : AppCompatActivity() {
         session.loadUri(input)
     }
 
-    private fun showSettingsDialog() {
-        val density = resources.displayMetrics.density
-        fun dp(value: Int) = (value * density).toInt()
+    // ---------------------------------------------------------------
+    // Settings — search engine only. No way to disable the extension,
+    // by design: this app is a locked-down browser.
+    // ---------------------------------------------------------------
 
+    private fun showSettingsDialog() {
         val container = LinearLayout(this).apply {
             orientation = LinearLayout.VERTICAL
             setPadding(dp(24), dp(16), dp(24), dp(8))
         }
 
-        // --- Search engine picker ---
         container.addView(TextView(this).apply {
             text = "Search engine"
             textSize = 16f
@@ -147,66 +282,32 @@ class MainActivity : AppCompatActivity() {
         }
         container.addView(radioGroup)
 
-        // --- Extension controls ---
         container.addView(TextView(this).apply {
             text = "Parental control extension"
             textSize = 16f
             setPadding(0, dp(20), 0, dp(4))
         })
 
-        val statusText = TextView(this)
-        val toggleButton = Button(this)
-        val optionsButton = Button(this).apply { text = "Open extension settings" }
-
-        fun refreshExtensionUi() {
-            val ext = installedExtension
-            if (ext == null) {
-                statusText.text = "Not installed yet — see the README's setup step."
-                toggleButton.isEnabled = false
-                optionsButton.isEnabled = false
+        val ext = installedExtension
+        val statusText = TextView(this).apply {
+            text = if (ext == null) {
+                "Not installed yet — see the README's setup step."
             } else {
                 val enabled = ext.metaData?.enabled ?: true
-                statusText.text = "${ext.metaData?.name ?: "Extension"} — ${if (enabled) "Enabled" else "Disabled"}"
-                toggleButton.text = if (enabled) "Disable" else "Enable"
-                toggleButton.isEnabled = true
-                optionsButton.isEnabled = !ext.metaData?.optionsPageUrl.isNullOrEmpty()
+                "${ext.metaData?.name ?: "Extension"} — ${if (enabled) "Enabled" else "Disabled"} (cannot be disabled from this app)"
             }
         }
-        refreshExtensionUi()
-
-        toggleButton.setOnClickListener {
-            val ext = installedExtension ?: return@setOnClickListener
-            val enabled = ext.metaData?.enabled ?: true
-            val action = if (enabled) {
-                runtime.webExtensionController.disable(ext, WebExtensionController.EnableSource.USER)
-            } else {
-                runtime.webExtensionController.enable(ext, WebExtensionController.EnableSource.USER)
-            }
-            action.accept(
-                { updated: WebExtension? ->
-                    installedExtension = updated
-                    runOnUiThread { refreshExtensionUi() }
-                },
-                { error: Throwable? ->
-                    Log.e("GuardianBrowser", "Failed to toggle extension", error)
-                }
-            )
-        }
-
-        optionsButton.setOnClickListener {
-            val url = installedExtension?.metaData?.optionsPageUrl
-            if (!url.isNullOrEmpty()) {
-                session.loadUri(url)
-            }
-        }
-
         container.addView(statusText)
-        container.addView(LinearLayout(this).apply {
-            orientation = LinearLayout.HORIZONTAL
-            setPadding(0, dp(8), 0, 0)
-            addView(toggleButton)
-            addView(optionsButton)
-        })
+
+        val optionsButton = Button(this).apply {
+            text = "Open extension settings"
+            isEnabled = !ext?.metaData?.optionsPageUrl.isNullOrEmpty()
+            setOnClickListener {
+                val url = installedExtension?.metaData?.optionsPageUrl
+                if (!url.isNullOrEmpty()) session.loadUri(url)
+            }
+        }
+        container.addView(optionsButton)
 
         AlertDialog.Builder(this)
             .setTitle("Settings")
