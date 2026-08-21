@@ -13,7 +13,7 @@ plugins {
 // and paste it in below. The value below was current as of Oct 2025 —
 // it will very likely need bumping.
 // ---------------------------------------------------------------------
-val geckoviewVersion = "155.0.20260817142839"
+val geckoviewVersion = "145.0.20251017090617"
 
 android {
     namespace = "com.guardian.browser"
