@@ -78,7 +78,7 @@ class MainActivity : AppCompatActivity() {
                 { extension: WebExtension? ->
                     Log.i("GuardianBrowser", "Parental control extension installed: ${extension?.id}")
                 },
-                { error: Throwable ->
+                { error: Throwable? ->
                     // If this fires, the most common cause is that
                     // assets/extensions/parental_whitelist/ is still just the
                     // placeholder file and doesn't contain the real
