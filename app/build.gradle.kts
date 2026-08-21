@@ -51,3 +51,9 @@ dependencies {
     // Mozilla's prebuilt Gecko rendering engine — the same engine Firefox uses.
     implementation("org.mozilla.geckoview:geckoview-beta:$geckoviewVersion")
 }
+configurations.all {
+    resolutionStrategy {
+        force("androidx.core:core:1.13.1")
+        force("androidx.core:core-ktx:1.13.1")
+    }
+}
