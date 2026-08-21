@@ -32,6 +32,22 @@
             android:background="@android:color/transparent"
             android:src="@android:drawable/ic_menu_search"
             android:contentDescription="@string/go" />
+
+        <Button
+            android:id="@+id/settings_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="8dp"
+            android:minWidth="0dp"
+            android:minHeight="0dp"
+            android:paddingStart="8dp"
+            android:paddingEnd="8dp"
+            android:background="@android:color/transparent"
+            android:text="⚙"
+            android:textSize="20sp"
+            android:textColor="@android:color/black"
+            android:contentDescription="Settings" />
+
     </LinearLayout>
 
     <org.mozilla.geckoview.GeckoView
