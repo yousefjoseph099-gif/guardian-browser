@@ -4,13 +4,71 @@
     android:layout_height="match_parent"
     android:orientation="vertical">
 
+    <HorizontalScrollView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:background="@color/toolbar_background_dark"
+        android:scrollbars="none">
+
+        <LinearLayout
+            android:id="@+id/tab_strip"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:padding="4dp" />
+
+    </HorizontalScrollView>
+
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="horizontal"
         android:background="@color/toolbar_background"
-        android:padding="10dp"
+        android:padding="8dp"
         android:gravity="center_vertical">
+
+        <Button
+            android:id="@+id/back_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:minWidth="0dp"
+            android:minHeight="0dp"
+            android:paddingStart="6dp"
+            android:paddingEnd="6dp"
+            android:background="@android:color/transparent"
+            android:text="←"
+            android:textSize="18sp"
+            android:textColor="@android:color/black"
+            android:contentDescription="Back" />
+
+        <Button
+            android:id="@+id/forward_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:minWidth="0dp"
+            android:minHeight="0dp"
+            android:paddingStart="6dp"
+            android:paddingEnd="6dp"
+            android:background="@android:color/transparent"
+            android:text="→"
+            android:textSize="18sp"
+            android:textColor="@android:color/black"
+            android:contentDescription="Forward" />
+
+        <Button
+            android:id="@+id/home_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginEnd="4dp"
+            android:minWidth="0dp"
+            android:minHeight="0dp"
+            android:paddingStart="6dp"
+            android:paddingEnd="6dp"
+            android:background="@android:color/transparent"
+            android:text="⌂"
+            android:textSize="18sp"
+            android:textColor="@android:color/black"
+            android:contentDescription="Home" />
 
         <EditText
             android:id="@+id/address_bar"
@@ -34,14 +92,29 @@
             android:contentDescription="@string/go" />
 
         <Button
+            android:id="@+id/action_button"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginStart="4dp"
+            android:minWidth="0dp"
+            android:minHeight="0dp"
+            android:paddingStart="6dp"
+            android:paddingEnd="6dp"
+            android:background="@android:color/transparent"
+            android:text="🧩"
+            android:textSize="18sp"
+            android:visibility="gone"
+            android:contentDescription="Extension" />
+
+        <Button
             android:id="@+id/settings_button"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_marginStart="8dp"
+            android:layout_marginStart="4dp"
             android:minWidth="0dp"
             android:minHeight="0dp"
-            android:paddingStart="8dp"
-            android:paddingEnd="8dp"
+            android:paddingStart="6dp"
+            android:paddingEnd="6dp"
             android:background="@android:color/transparent"
             android:text="⚙"
             android:textSize="20sp"
